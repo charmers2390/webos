@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WebOS – mac style v6.1 (hotfix)</title>
+<style>
+  :root{
+    --glass: rgba(255,255,255,.25);
+    --panel: rgba(245,245,247,.88);
+    --panel-dark: rgba(30,30,33,.86);
+    --text: #0b0f14;
+    --muted:#7e8798;
+    --accent:#007aff;
+    --shadow: 0 15px 45px rgba(0,0,0,.35);
+    --topH: 30px;
+  }
+  html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;background:#0c0f14}
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background: radial-gradient(1200px 800px at 30% 20%, #2b2f77 0%, transparent 60%),
+                radial-gradient(1000px 700px at 70% 80%, #2a966a 0%, transparent 55%),
+                linear-gradient(180deg, #0c0f14 0%, #0a0e13 100%);
+    filter:saturate(1.1);
+    z-index:-1;
+  }
+  /* Small utility classes to avoid missing CSS */
+  .row{display:flex;gap:8px;align-items:center}
+  .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+  .muted{color:#7e8798}
+  /* Top bar */
+  #topbar{position:fixed;left:0;top:0;right:0;height:var(--topH);display:flex;align-items:center;gap:8px;padding:0 10px;
+    color:#fff;background:linear-gradient(#1f2228,#171a1f);box-shadow:0 1px 0 rgba(255,255,255,.08) inset}
+  #sig{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .bars{display:inline-grid;grid-auto-flow:column;align-items:end;gap:2px}
+  .bar{width:3px;height:6px;background:#777;border-radius:1px}
+  .bar.on{background:#fff}
+  #carrierText{font-size:12px;opacity:.9}
+  #apple{font-weight:700;font-size:14px;opacity:.95;margin-left:8px}
+  #menu{font-size:13px;opacity:.9}
+  #pranaBtn{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:3px 8px;cursor:pointer}
+  #clock{margin-left:8px;font-variant-numeric:tabular-nums}
+  /* Dock */
+  #dock{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;height:96px;padding:8px 14px;display:flex;gap:10px;align-items:flex-end;
+    background:var(--glass);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.35);border-radius:18px;box-shadow:var(--shadow)}
+  .dock-item{width:72px;height:72px;border-radius:16px;display:grid;place-items:center;cursor:pointer;position:relative}
+  .dock-item span{position:absolute;bottom:-18px;font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  .dock-item svg{width:70%;height:70%;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+  .dock-item:hover{transform:translateY(-6px);transition:transform .12s}
+  /* Desktop/Launchpad */
+  #desktop{position:fixed;inset:var(--topH) 0 110px 0}
+  .desk-icon{position:absolute;width:92px;text-align:center;color:#eaeef5;font-size:12px;cursor:pointer}
+  .desk-icon .ico{width:66px;height:66px;margin:0 auto 6px;display:grid;place-items:center;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.35);border-radius:16px;box-shadow:var(--shadow)}
+  .desk-icon svg{width:60%;height:60%}
+  #launchpad{position:fixed;inset:var(--topH) 0 0 0;display:none;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:18px;padding:24px;
+    backdrop-filter:blur(10px);background:rgba(10,12,16,.6)}
+  .lp-app{display:flex;flex-direction:column;align-items:center;color:#fff;gap:8px;cursor:pointer}
+  .lp-app .icon{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.25);display:grid;place-items:center;border:1px solid rgba(255,255,255,.35)}
+  .lp-app svg{width:54px;height:54px}
+  /* Windows */
+  .win{position:absolute;top:110px;left:80px;width:780px;height:540px;background:var(--panel);backdrop-filter:saturate(1.1) blur(8px);
+    border:1px solid rgba(0,0,0,.08);border-radius:14px;box-shadow:var(--shadow);display:none;flex-direction:column;overflow:hidden}
+  .win.dark{background:var(--panel-dark);color:#fff;border-color:rgba(255,255,255,.12)}
+  .title{height:36px;background:linear-gradient(#ebedf0,#dadce1);display:flex;align-items:center;gap:8px;padding:0 10px;font-weight:600}
+  .dark .title{background:linear-gradient(#2b2f33,#22262b)}
+  .traffic{display:flex;gap:8px;margin-right:6px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .dot.red{background:#ff5f57}.dot.yellow{background:#febc2e}.dot.green{background:#28c840}
+  .title .spacer{flex:1}
+  .title .tbtn{background:#222;color:#fff;border-radius:6px;border:1px solid rgba(255,255,255,.3);padding:4px 8px;cursor:pointer}
+  .body{flex:1;overflow:auto;background:rgba(255,255,255,.7)}
+  .dark .body{background:rgba(0,0,0,.2)}
+  .pad{padding:12px}
+  .toolbar{padding:8px;border-bottom:1px solid #ccc;background:rgba(255,255,255,.7);position:sticky;top:0;z-index:2}
+  .dark .toolbar{border-color:rgba(255,255,255,.1);background:rgba(0,0,0,.25)}
+  .two{display:grid;grid-template-columns:220px 1fr;gap:16px}
+  .card{background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px}
+  .list div{padding:10px 8px;border-bottom:1px solid rgba(0,0,0,.08);cursor:pointer}
+  .list div:hover{background:rgba(0,0,0,.04)}
+  .switch{position:relative;width:44px;height:24px;background:#c7c9d1;border-radius:999px;display:inline-block;vertical-align:middle}
+  .switch::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch.on{background:#34c759}
+  .switch.on::after{left:23px}
+
+  /* Wallet visuals */
+  .wallet-leather{
+    background-image:url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900"><defs><radialGradient id="g" cx="0.3" cy="0.3" r="1"><stop offset="0" stop-color="%238a5b3d"/><stop offset="1" stop-color="%23513423"/></radialGradient><pattern id="stitch" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M2,2 l8,8 M10,2 l-8,8" stroke="%23f1e0c7" stroke-width="1" opacity="0.3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23g)"/><rect x="18" y="18" width="1364" height="864" fill="none" stroke="url(%23stitch)" stroke-width="4" rx="36"/></svg>');
+    background-size:cover;border-radius:14px;padding:16px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7);box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .wallet-slot{background:rgba(0,0,0,.15);border:2px dashed rgba(255,255,255,.2);border-radius:12px;padding:10px;margin:8px 0}
+  .wallet-card{background:url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="900" height="560"><defs><linearGradient id="c" x1="0" x2="1"><stop offset="0" stop-color="%236d83ff"/><stop offset="1" stop-color="%23b966ff"/></linearGradient></defs><rect x="0" y="0" width="900" height="560" rx="36" fill="url(%23c)"/><text x="60" y="110" fill="white" font-size="56" font-family="Helvetica,Arial">WebOS Debit</text><rect x="60" y="160" width="120" height="80" rx="10" fill="%23ffd166"/><text x="60" y="340" fill="white" font-size="44" font-family="monospace">4000 7161 8271 8726</text><text x="60" y="400" fill="white" font-size="32" font-family="monospace">CVC 7192    EXP 12/31</text></svg>') center/cover no-repeat; height:200px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35);}
+
+  /* Music cards */
+  .album-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .album{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+  .album .cover{height:140px;background:linear-gradient(45deg,#ff9a9e,#fad0c4)}
+  .album .meta{padding:10px}
+  .now{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.05);border-radius:10px;padding:10px;margin-top:10px}
+  .now .thumb{width:48px;height:48px;border-radius:8px;background:linear-gradient(45deg,#a18cd1,#fbc2eb)}
+  .fs-exit,.tbtn{background:#222;color:#fff;border-radius:6px;border:1px solid rgba(255,255,255,.3);padding:4px 8px;cursor:pointer}
+
+  /* Prana AI overlay */
+  #pranaOverlay{position:fixed;inset:var(--topH) 0 0 0;display:none;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);z-index:999}
+  #pranaCard{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:900px;max-width:92vw;height:70vh;background:rgba(255,255,255,.9);
+    border:1px solid rgba(0,0,0,.1);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden}
+  #pranaHeader{display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(#f6f7fb,#e4e7ef);font-weight:700}
+  #pranaStream{flex:1;overflow:auto;padding:12px}
+  .msg{max-width:70%;padding:10px 12px;border-radius:12px;margin:8px 0;box-shadow:0 3px 12px rgba(0,0,0,.12)}
+  .msg.ai{background:#eef2ff;border:1px solid #c7d2fe}
+  .msg.me{background:#dcfce7;border:1px solid #bbf7d0;margin-left:auto}
+  .msg .row{display:flex;align-items:center;gap:8px}
+  #pranaInput{display:flex;gap:8px;padding:10px;background:#f2f3f7;border-top:1px solid #d9dbe4}
+  #pranaInput input{flex:1;padding:10px;border-radius:10px;border:1px solid #cfd6e6}
+  .sbtn{font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div id="sig" title="Carrier / SIM">
+    <div class="bars" id="bars"></div>
+    <div id="carrierText">…</div>
+  </div>
+  <div id="apple"></div>
+  <div id="menu">WebOS</div>
+  <div id="pranaBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="#fff"><circle cx="10" cy="10" r="6" fill="#fff" opacity=".85"/><path d="M15 15l5 5" stroke="#fff" stroke-width="2"/></svg><span>Ask Prana AI</span></div>
+  <div id="clock"></div>
+</div>
+
+<div id="desktop"></div>
+<div id="dock"></div>
+<div id="launchpad"></div>
+
+<!-- Prana AI overlay -->
+<div id="pranaOverlay">
+  <div id="pranaCard">
+    <div id="pranaHeader">
+      <div style="width:12px;height:12px;border-radius:50%;background:#10b981"></div>
+      Prana AI
+      <div style="margin-left:auto"><button class="sbtn" id="pranaClose">Close</button></div>
+    </div>
+    <div id="pranaStream"></div>
+    <div id="pranaInput">
+      <input id="pranaText" placeholder="Ask anything…">
+      <button class="tbtn" id="pranaSend">Send</button>
+    </div>
+  </div>
+</div>
+
+<div id="welcome" class="win" style="top:80px;left:80px;display:flex">
+  <div class="title">
+    <div class="traffic"><div class="dot red" id="welcomeClose1"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+    Welcome
+    <div class="spacer"></div>
+    <button class="tbtn" id="welcomeClose2">Back</button>
+  </div>
+  <div class="body"><div class="pad">
+    <h3>Welcome to WebOS v6.1 (hotfix)</h3>
+    <ul>
+      <li>Prana AI top‑bar assistant with optional 🔊 Speak.</li>
+      <li>Carrier simulation (No SIM / setup Verizon, T‑Mobile, AT&amp;T / Not supported on desktop).</li>
+      <li>Wallet persistence, Phone (tel:), Messages (sms:), plus Camera/Photos/Music.</li>
+    </ul>
+    <button class="tbtn" id="welcomeClose3">Close</button>
+  </div></div>
+</div>
+
+<script>
+// --- robust helpers ---
+function on(id, event, fn){ const el=document.getElementById(id); if(el) el.addEventListener(event, fn); }
+function jget(k,def){try{return JSON.parse(localStorage.getItem(k)??'null')??def}catch{return def}}
+function jset(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+// ===== Carrier Simulation =====
+function isMobileUA(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function getCarrier(){ return jget('webos.carrier', {supported:isMobileUA(), carrier:null, sim:false, name:'NO SIM', tech:null}); }
+function setCarrier(obj){ jset('webos.carrier', obj); refreshCarrierUI(); }
+
+function refreshCarrierUI(){
+  const c=getCarrier();
+  const bars=document.getElementById('bars'); if(!bars) return;
+  bars.innerHTML='';
+  for(let i=1;i<=5;i++){ const b=document.createElement('div'); b.className='bar'; b.style.height=(4+i*3)+'px'; if(c.sim&&c.carrier) b.classList.add('on'); bars.appendChild(b); }
+  const text=document.getElementById('carrierText');
+  if(!c.supported) text.textContent='Carrier not supported';
+  else if(!c.sim) text.textContent='NO SIM';
+  else text.textContent=(c.name||c.carrier)+' '+(c.tech||'LTE');
+}
+
+// ===== Prana AI Overlay =====
+function openPrana(){ document.getElementById('pranaOverlay').style.display='block'; loadPranaHistory(); document.getElementById('pranaText').focus(); }
+function closePrana(){ document.getElementById('pranaOverlay').style.display='none'; }
+function pranaPush(who,text){
+  const row=document.createElement('div'); row.className='msg '+(who==='ai'?'ai':'me');
+  if(who==='ai'){
+    const inner=document.createElement('div'); inner.className='row';
+    const textDiv=document.createElement('div'); textDiv.textContent=text;
+    const btn=document.createElement('button'); btn.className='sbtn'; btn.textContent='🔊 Speak'; btn.onclick=()=>speakText(text);
+    inner.appendChild(textDiv); inner.appendChild(btn); row.appendChild(inner);
+  } else {
+    row.textContent=text;
+  }
+  const s=document.getElementById('pranaStream'); s.appendChild(row); s.scrollTop=s.scrollHeight;
+}
+function loadPranaHistory(){ const hist=jget('webos.prana.history',[]); const s=document.getElementById('pranaStream'); s.innerHTML=''; hist.forEach(m=>pranaPush(m.role==='assistant'?'ai':'me', m.content)); }
+function savePrana(role,content){ const hist=jget('webos.prana.history',[]); hist.push({role,content,ts:Date.now()}); jset('webos.prana.history',hist); }
+async function sendPrana(){
+  const inp=document.getElementById('pranaText'); const q=inp.value.trim(); if(!q) return; inp.value='';
+  pranaPush('me', q); savePrana('user', q);
+  let reply='';
+  try{
+    const res = await fetch('https://lunabotai.onrender.com', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:q})});
+    if(res.ok){ const data=await res.json().catch(()=>null); reply = (data && (data.reply||data.text||data.answer)) || await res.text(); }
+    else reply = 'Sorry, the AI service is unavailable right now.';
+  }catch(e){ reply='(offline) I cannot reach the AI service. Try again later.'; }
+  pranaPush('ai', reply); savePrana('assistant', reply);
+}
+function speakText(text){
+  try{
+    const u=new SpeechSynthesisUtterance(text);
+    const vs=speechSynthesis.getVoices();
+    const prefer = vs.find(v=>/Google UK English Male|Microsoft Zira|Microsoft David|Google English/i.test(v.name)) || vs[0];
+    if(prefer) u.voice=prefer;
+    u.pitch=0.9; u.rate=1.0; u.volume=1.0;
+    speechSynthesis.speak(u);
+  }catch(e){ alert('Speech not supported in this browser.'); }
+}
+
+// ===== Core UI =====
+const desktop=document.getElementById('desktop');
+const dock=document.getElementById('dock');
+const launch=document.getElementById('launchpad');
+const apps = [
+  {id:'wallet', name:'Wallet', icon:'wallet', build:buildWallet},
+  {id:'wmusic', name:'W Music', icon:'music', build:buildMusic},
+  {id:'notes', name:'Notes', icon:'notes', build:buildNotes},
+  {id:'settings', name:'Settings', icon:'settings', build:buildSettings},
+  {id:'browser', name:'Browser', icon:'browser', build:buildBrowser},
+  {id:'calculator', name:'Calculator', icon:'calc', build:buildCalc},
+  {id:'appstore', name:'App Store', icon:'store', build:buildStore},
+  {id:'photos', name:'Photos', icon:'photos', build:buildPhotos},
+  {id:'camera', name:'Camera', icon:'camera', build:buildCamera},
+  {id:'phone', name:'Phone', icon:'phone', build:buildPhone},
+  {id:'messages', name:'Messages', icon:'messages', build:buildMessages}
+];
+let z=50;
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString();},1000);
+
+// Icons
+function icon(kind){
+  const svgs={
+    wallet:`<svg viewBox="0 0 24 24" fill="#7d5c3b"><path d="M3 7a3 3 0 0 1 3-3h11a2 2 0 0 1 0 4H4v10a2 2 0 0 1-2-2V7z"/><rect x="4" y="6" width="16" height="12" rx="2" fill="#caa77a"/></svg>`,
+    music:`<svg viewBox="0 0 24 24" fill="#ff3864"><path d="M9 3v12.26A3.99 3.99 0 1 0 11 19V8h8V3H9z"/></svg>`,
+    notes:`<svg viewBox="0 0 24 24" fill="#f5c34b"><path d="M6 2h12a2 2 0 0 1 2 2v11l-5 5H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg>`,
+    settings:`<svg viewBox="0 0 24 24" fill="#b9c3d0"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm8.94 3a8.1 8.1 0 0 1 0 2l2.06 1.6-2 3.46-2.43-1a8.2 8.2 0 0 1-1.73 1l-.37 2.6h-4l-.37-2.6a8.2 8.2 0 0 1-1.73-1l-2.43 1-2-3.46L3.06 13a8.1 8.1 0 0 1 0-2L1 9.4 3 5.94l2.43 1a8.2 8.2 0 0 1 1.73-1L7.53 3.4h4l.37 2.6a8.2 8.2 0 0 1 1.73 1l2.43-1 2 3.46L20.94 11z"/></svg>`,
+    browser:`<svg viewBox="0 0 24 24" fill="#5ec0ff"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 2c1.9 0 3.6 3.1 3.95 7H8.05C8.4 7.1 10.1 4 12 4zM6.3 9c-.2.9-.3 1.9-.3 3s.1 2.1.3 3h-1A8 8 0 0 1 4 12c0-1.1.2-2.1.6-3h1.7zM12 20c-1.9 0-3.6-3.1-3.95-7h7.9C15.6 16.9 13.9 20 12 20zm5.7-5c.2-.9.3-1.9.3-3s-.1-2.1-.3-3h1A8 8 0 0 1 20 12c0 1.1-.2 2.1-.6 3h-1.7z"/></svg>`,
+    calc:`<svg viewBox="0 0 24 24" fill="#9b6bff"><rect x="4" y="3" width="16" height="18" rx="3"/><rect x="7" y="6" width="10" height="3" fill="#fff"/><g fill="#fff"><rect x="7" y="11" width="3" height="3"/><rect x="11" y="11" width="3" height="3"/><rect x="15" y="11" width="3" height="3"/><rect x="7" y="15" width="3" height="3"/><rect x="11" y="15" width="7" height="3"/></g></svg>`,
+    store:`<svg viewBox="0 0 24 24" fill="#34c759"><path d="M4 7h16l-2 12H6L4 7zm3-3h10l1 3H6l1-3z"/></svg>`,
+    photos:`<svg viewBox="0 0 24 24" fill="#ffd166"><circle cx="12" cy="12" r="4" fill="#ef476f"/><path d="M4 7h16v10H4z" fill="#06d6a0"/></svg>`,
+    camera:`<svg viewBox="0 0 24 24" fill="#e0e7ff"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="4" fill="#6366f1"/></svg>`,
+    phone:`<svg viewBox="0 0 24 24" fill="#34c759"><path d="M6 2h6l2 2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6z"/><path d="M8 7h8v10H8z" fill="#fff" opacity=".2"/></svg>`,
+    messages:`<svg viewBox="0 0 24 24" fill="#30b0ff"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M7 14l-2 4 4-2h8" fill="#fff" opacity=".35"/></svg>`
+  }; return svgs[kind]||svgs['notes']; }
+
+function toggleLaunchpad(force){
+  const s=getComputedStyle(launch).display;
+  launch.style.display=(force===false)?'none':(s==='none'?'grid':'none');
+}
+function buildWindow(id,title,dark){
+  const w=document.createElement('div'); w.id=id; w.className='win'+(dark?' dark':'');
+  w.innerHTML='<div class="title">\
+      <div class="traffic">\
+        <div class="dot red" data-close="'+id+'"></div>\
+        <div class="dot yellow"></div>\
+        <div class="dot green"></div>\
+      </div>'+title+'\
+      <div class="spacer"></div>\
+      <button class="tbtn" data-back="'+id+'">Back</button>\
+      <button class="tbtn" data-exit="'+id+'" style="margin-left:6px">Exit Fullscreen</button>\
+    </div>\
+    <div class="body"><div class="pad" id="'+id+'-content"></div></div>';
+  document.body.appendChild(w);
+  w.querySelector('[data-close="'+id+'"]').onclick=()=>hide(id);
+  w.querySelector('[data-back="'+id+'"]').onclick=()=>back(id);
+  w.querySelector('[data-exit="'+id+'"]').onclick=()=>exitFS(id);
+  makeDraggable(w);
+  return w;
+}
+function openApp(id,fullscreen){
+  let w=document.getElementById(id);
+  if(!w){ const app=apps.find(a=>a.id===id); if(!app) return; w=buildWindow(id,app.name, id==='settings'); app.build(); }
+  w.style.display='flex'; w.style.zIndex=++z;
+  if(fullscreen){ enterFS(id); }
+}
+function hide(id){ const w=document.getElementById(id); if(w) w.style.display='none'; }
+function back(id){
+  if(id==='browser'){ browserBack(); return; }
+  hide(id);
+}
+function enterFS(id){ const w=document.getElementById(id); if(!w) return; w.style.top='var(--topH)'; w.style.left='0'; w.style.width='100%'; w.style.height='calc(100% - var(--topH))'; }
+function exitFS(id){ const w=document.getElementById(id); if(!w) return; w.style.top='110px'; w.style.left='80px'; w.style.width='780px'; w.style.height='540px'; }
+function makeDraggable(win){
+  const head=win.querySelector('.title');
+  head.addEventListener('mousedown',e=>{
+    const rect=win.getBoundingClientRect();
+    const ox=e.clientX-rect.left, oy=e.clientY-rect.top;
+    function mm(ev){ win.style.left=(ev.clientX-ox)+'px'; win.style.top=(ev.clientY-oy)+'px'; }
+    function up(){ window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',up); }
+    window.addEventListener('mousemove',mm); window.addEventListener('mouseup',up);
+  });
+}
+
+// Build Dock + Launchpad + Desktop icons AFTER functions exist
+apps.forEach((a,i)=>{
+  const d=document.createElement('div'); d.className='dock-item'; d.title=a.name;
+  d.innerHTML=icon(a.icon)+'<span>'+a.name.replace('app','')+'</span>'; d.onclick=()=>openApp(a.id,true); dock.appendChild(d);
+  const l=document.createElement('div'); l.className='lp-app'; l.onclick=()=>{toggleLaunchpad(false);openApp(a.id,true);};
+  l.innerHTML='<div class="icon">'+icon(a.icon)+'</div><div>'+a.name+'</div>'; launch.appendChild(l);
+  if(i<6){ const di=document.createElement('div'); di.className='desk-icon'; di.style.top=(40+(i>=3?100:0))+'px'; di.style.left=(40+(i%3)*100)+'px';
+    di.onclick=()=>openApp(a.id,true); di.innerHTML='<div class="ico">'+icon(a.icon)+'</div>'+a.name; desktop.appendChild(di); }
+});
+
+// hook topbar buttons
+on('pranaBtn','click',openPrana);
+on('pranaSend','click',sendPrana);
+on('pranaClose','click',closePrana);
+on('pranaText','keydown',e=>{ if(e.key==='Enter') sendPrana(); });
+on('sig','click',()=>openApp('carrier',true));
+
+// ===== Wallet (persistence) =====
+function buildWallet(){
+  const saved=jget('webos.wallet', null);
+  const c=document.getElementById('wallet-content');
+  if(saved && saved.ready){
+    c.innerHTML='<div class="wallet-leather">\
+      <h2>'+ (saved.email||'Your') +' Wallet</h2>\
+      <div class="wallet-slot"><div class="wallet-card"></div></div>\
+      <div class="wallet-slot">weos wallet $0</div>'+
+      (saved.hasAccount?'<div class="wallet-slot">Webos account $1.00</div>':'')+
+      '<div class="wallet-slot">Bank $0</div>\
+      <div class="row"><button class="tbtn" onclick="resetWallet()">Reset Wallet</button></div>\
+    </div>';
+    return;
+  }
+  c.innerHTML='<div class="wallet-leather">\
+    <h2 style="margin:6px 0;">WebOS Wallet</h2>\
+    <div class="wallet-slot">\
+      <div class="mb8">To continue, enter your email:</div>\
+      <div class="row mb8"><input type="email" id="walletEmail" placeholder="you@example.com"><button id="wContinue">Continue</button></div>\
+    </div>\
+    <div class="wallet-slot"><div class="wallet-card"></div></div>\
+  </div>';
+  on('wContinue','click',w1);
+}
+let wEmail='';
+function w1(){ const inp=document.getElementById('walletEmail'); wEmail= (inp && inp.value) ? inp.value : 'there';
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>WebOS Wallet</h2>\
+    <div class="wallet-slot">Hello '+wEmail+', would you like to continue with a WebOS debit card?\
+      <div class="row" style="margin-top:8px"><button id="wYes">Yes</button><button class="tbtn" id="wNo">No</button></div>\
+    </div>\
+    <div class="wallet-slot"><div class="wallet-card"></div></div>\
+  </div>';
+  on('wYes','click',wYes); on('wNo','click',wNo);
+}
+function wYes(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Verification</h2>\
+    <div class="wallet-slot">\
+      <div class="mb8">We just need to verify something</div>\
+      <input class="mb8" placeholder="Enter your nine digit Social Security number">\
+      <div><button id="wMake">Continue</button></div>\
+    </div></div>';
+  on('wMake','click',wMake);
+}
+function wMake(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Creating your card…</h2>\
+    <div id="wTimer" class="mb8">10s</div>\
+    <div class="wallet-slot"><div class="wallet-card"></div></div>\
+  </div>';
+  let t=10; const el=document.getElementById('wTimer'); const timer=setInterval(()=>{t--; if(el) el.textContent=t+"s"; if(t<=0){clearInterval(timer); wShowCard();}},1000);
+}
+function wShowCard(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Your WebOS Debit</h2>\
+    <div class="wallet-slot"><div class="wallet-card"></div></div>\
+    <div class="wallet-slot">\
+      <div class="mb8"><strong>Done!</strong></div>\
+      Card number: <code>4000716182718726</code><br>\
+      CVC: <code>7192</code> &nbsp;&nbsp; Exp: <code>12/31</code><br><br>\
+      <button id="wAdd">Continue</button>\
+    </div>\
+  </div>';
+  on('wAdd','click',wAddPrompt);
+}
+function wAddPrompt(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Add to Weos Wallet?</h2>\
+    <div class="wallet-slot"><div class="row"><button id="wAddYes">Yes</button><button class="tbtn" id="wAddNo">No</button></div></div>\
+  </div>';
+  on('wAddYes','click',wAddForm); on('wAddNo','click',()=>wBalances(false));
+}
+function wAddForm(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Add Card</h2>\
+    <div class="wallet-slot">\
+      <div class="mb8"><input id="wCard" placeholder="Card number" value="4000 7161 8271 8726"></div>\
+      <div class="row mb8"><input id="wCvc" placeholder="CVC" value="7192"><input id="wExp" placeholder="Expiration" value="12/31"></div>\
+      <div class="mb8"><input id="wSsn" placeholder="SSN"></div>\
+      <button id="wFinal">Continue</button>\
+    </div>\
+  </div>';
+  on('wFinal','click',()=>wBalances(true));
+}
+function wNo(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Add card number</h2>\
+    <div class="wallet-slot">\
+      <div class="mb8"><input placeholder="Card number"></div>\
+      <button id="wContBank">Continue</button>\
+    </div></div>';
+  on('wContBank','click',wBankForm);
+}
+function wBankForm(){
+  const c=document.getElementById('wallet-content');
+  c.innerHTML='<div class="wallet-leather">\
+    <h2>Bank information</h2>\
+    <div class="wallet-slot">\
+      <div class="mb8"><input placeholder="Account number"></div>\
+      <div class="mb8"><input placeholder="Routing number"></div>\
+      <div class="row mb8"><input placeholder="Card number"><input placeholder="CVC"><input placeholder="Expiration"></div>\
+      <div class="mb8"><input placeholder="SSN"></div>\
+      <button id="wBankDone">Continue</button>\
+    </div></div>';
+  on('wBankDone','click',()=>wBalances(false));
+}
+function wBalances(hasAccount){
+  const data={ready:true,email:wEmail||'you',hasAccount:!!hasAccount,card:{number:'4000716182718726',cvc:'7192',exp:'12/31'}};
+  jset('webos.wallet', data);
+  buildWallet();
+}
+function resetWallet(){ localStorage.removeItem('webos.wallet'); buildWallet(); }
+
+// ===== Music =====
+function buildMusic(){
+  const c=document.getElementById('wmusic-content');
+  c.innerHTML='<div class="toolbar"><strong>Library</strong></div>\
+  <div class="pad">\
+    <div class="album-grid">\
+      <div class="album" id="track1">\
+        <div class="cover"></div>\
+        <div class="meta"><strong>Happy Happy Happy</strong><div class="muted">MP3</div></div>\
+      </div>\
+      <div class="album" id="track2">\
+        <div class="cover" style="background:linear-gradient(45deg,#a1c4fd,#c2e9fb)"></div>\
+        <div class="meta"><strong>Beats at Night</strong><div class="muted">WAV</div></div>\
+      </div>\
+    </div>\
+    <div class="now" id="nowRow" style="display:none">\
+      <div class="thumb" id="nowThumb"></div>\
+      <div><div id="nowTitle" style="font-weight:700"></div><div class="muted">Now Playing</div></div>\
+      <div style="margin-left:auto"><button class="tbtn" id="btnPlay">Play/Pause</button> <button class="tbtn" id="btnStop">Stop</button></div>\
+    </div>\
+    <audio id="player" controls style="width:100%;margin-top:10px"></audio>\
+  </div>';
+  on('track1','click',()=>playSong('happy-happy-happy-song.mp3','Happy Happy Happy'));
+  on('track2','click',()=>playSong('dodo_anthem_beat_glitchy.wav','Beats at Night'));
+  on('btnPlay','click',togglePlay); on('btnStop','click',stopPlay);
+}
+function playSong(path,title){
+  const p=document.getElementById('player'); if(!p) return;
+  p.pause(); p.src=path; p.play();
+  document.getElementById('nowTitle').textContent=title||path; 
+  document.getElementById('nowRow').style.display='flex';
+  document.getElementById('nowThumb').style.background = title==='Beats at Night' ? 'linear-gradient(45deg,#a1c4fd,#c2e9fb)' : 'linear-gradient(45deg,#a18cd1,#fbc2eb)';
+}
+function togglePlay(){ const p=document.getElementById('player'); if(p) { if(p.paused) p.play(); else p.pause(); } }
+function stopPlay(){ const p=document.getElementById('player'); if(p){ p.pause(); p.currentTime=0; } }
+
+// ===== Notes =====
+function buildNotes(){
+  const c=document.getElementById('notes-content');
+  c.innerHTML='<div class="toolbar"><button class="tbtn" id="notesSave">Save</button></div>\
+  <div class="pad"><textarea id="notesArea" style="width:100%;height:380px" placeholder="Type notes here..."></textarea></div>';
+  const v=localStorage.getItem('webos.notes'); if(v) document.getElementById('notesArea').value=v;
+  on('notesSave','click',()=>localStorage.setItem('webos.notes', document.getElementById('notesArea').value));
+}
+
+// ===== Settings =====
+function buildSettings(){
+  const c=document.getElementById('settings-content');
+  c.innerHTML='<div class="two">\
+    <div class="card list" id="setList">\
+      <div data-s="about">About</div>\
+      <div data-s="cell">Cellular</div>\
+      <div data-s="wifi">Wi‑Fi</div>\
+      <div data-s="bluetooth">Bluetooth</div>\
+      <div data-s="wall">Wallpaper</div>\
+      <div data-s="display">Display & Brightness</div>\
+      <div data-s="privacy">Privacy</div>\
+      <div data-s="battery">Battery</div>\
+      <div data-s="advanced">Advanced</div>\
+    </div>\
+    <div id="setPane" class="card"></div>\
+  </div>';
+  document.querySelectorAll('#setList [data-s]').forEach(el=>el.onclick=()=>showSet(el.getAttribute('data-s')));
+  showSet('about');
+}
+function showSet(which){
+  const p=document.getElementById('setPane');
+  const carr=getCarrier();
+  if(which==='about'){
+    p.innerHTML='<h3>About</h3>\
+    <div class="mb8">Name: <strong>web phone</strong></div>\
+    <div class="mb8">Model Name: <strong>Web phone 1</strong></div>\
+    <div class="mb8">Model Number: <strong>WPBCWP1WWOES</strong></div>\
+    <div class="mb8">Software Version: <strong>webOS 1.0.0.6.1</strong></div>\
+    <hr class="mb8">\
+    <div class="mb8">Carrier: <strong>'+ (carr.sim? (carr.name+' '+(carr.tech||'LTE')) : (carr.supported?'NO SIM':'Not supported')) +'</strong></div>';
+  } else if(which==='cell'){
+    p.innerHTML='<h3>Cellular</h3>\
+    <div class="mb8">Status: <strong>'+ (carr.supported? (carr.sim?'Active':'No SIM'): 'Carrier not supported on this device') +'</strong></div>'+
+    (carr.supported ? ('<div class="mb8">Plan: <strong>'+ (carr.sim? 'Unlimited Welcome' : '-') +'</strong></div>\
+    <div class="mb8">Network: <strong>'+ (carr.sim? (carr.tech||'LTE'):'-') +'</strong></div>\
+    <div class="mb8">Carrier: <strong>'+ (carr.sim? carr.name:'-') +'</strong></div>\
+    <div class="row mb16"><button class="tbtn" id="cellSetup">'+ (carr.sim?'Manage Carrier':'Set Up Carrier') +'</button>'+ (carr.sim?'<button class="tbtn" id="cellRemove">Remove SIM</button>':'') +'</div>')
+    : '<div class="mb8">This device does not support carriers.</div>');
+    const btn=document.getElementById('cellSetup'); if(btn) btn.onclick=()=>openApp('carrier',true);
+    const rm=document.getElementById('cellRemove'); if(rm) rm.onclick=carrierReset;
+  } else if(which==='wifi'){
+    p.innerHTML='<h3>Wi‑Fi</h3><div class="mb8"><span class="switch on"></span> Wi‑Fi</div><div class="mb8">Current Network: <strong>WebOS-Home</strong></div>';
+  } else if(which==='bluetooth'){
+    p.innerHTML='<h3>Bluetooth</h3><div class="mb8"><span class="switch on"></span> Bluetooth</div><div>Devices: WebOS AirPods, Keyboard</div>';
+  } else if(which==='wall'){
+    p.innerHTML='<h3>Wallpaper</h3><input type="file" accept="image/*" id="wallpick"><div class="mb8">Choose an image to set as background.</div>';
+    on('wallpick','change',setWallpaper);
+  } else if(which==='display'){
+    p.innerHTML='<h3>Display & Brightness</h3>\
+      <div class="mb8">Appearance: <button id="thLight">Light</button> <button class="tbtn" id="thDark">Dark</button></div>\
+      <div class="mb8">Dock Size: <input type="range" id="docksize" min="56" max="96" value="72"></div>';
+    on('thLight','click',()=>theme('light')); on('thDark','click',()=>theme('dark'));
+    on('docksize','input',e=>dockSize(e.target.value));
+  } else if(which==='privacy'){
+    p.innerHTML='<h3>Privacy</h3><div class="mb8">Location Services: <span class="switch on"></span></div><div>Analytics & Improvements: <span class="switch"></span></div>';
+  } else if(which==='battery'){
+    p.innerHTML='<h3>Battery</h3><div class="mb8">Battery Health: <strong>100%</strong></div><div>Low Power Mode: <span class="switch"></span></div>';
+  } else if(which==='advanced'){
+    p.innerHTML='<h3>Advanced</h3>\
+      <div class="mb8"><button class="tbtn" id="wReset">Reset Wallet</button></div>\
+      <div class="mb8"><button class="tbtn" id="cReset">Remove SIM / Reset Carrier</button></div>\
+      <div class="mb8"><button class="tbtn" id="clearAll">Clear All Local Storage</button></div>';
+    on('wReset','click',resetWallet);
+    on('cReset','click',carrierReset);
+    on('clearAll','click',()=>{ localStorage.clear(); alert('localStorage cleared. Reload to see effects.'); });
+  }
+}
+
+// Carrier Setup Wizard app
+function buildCarrier(){
+  const c=document.getElementById('carrier-content');
+  const carr=getCarrier();
+  if(!carr.supported){
+    c.innerHTML='<div class="pad"><h3>Carrier not supported</h3><p>This device cannot use carriers. (Desktop browsers are detected as unsupported.)</p></div>';
+    return;
+  }
+  if(carr.sim){
+    c.innerHTML='<div class="pad"><h3>'+carr.name+' — SIM Active</h3>\
+      <div class="mb8">Network: '+(carr.tech||'LTE')+'</div>\
+      <div class="mb8">Number: (555) 010-'+String((carr.seed||1234)).padStart(4,"0")+'</div>\
+      <div class="row"><button class="tbtn" id="cRem">Remove SIM</button></div>\
+    </div>';
+    on('cRem','click',carrierReset);
+    return;
+  }
+  c.innerHTML='<div class="pad"><h3>Set Up Cellular</h3>\
+    <p>Select your carrier:</p>\
+    <div class="row mb16">\
+      <button class="tbtn" id="cV">Verizon</button>\
+      <button class="tbtn" id="cT">T‑Mobile</button>\
+      <button class="tbtn" id="cA">AT&amp;T</button>\
+    </div>\
+    <div id="cSteps"></div>\
+  </div>';
+  on('cV','click',()=>carrierSetup('Verizon'));
+  on('cT','click',()=>carrierSetup('T-Mobile'));
+  on('cA','click',()=>carrierSetup('AT&T'));
+}
+function carrierSetup(name){
+  const steps=document.getElementById('cSteps');
+  steps.innerHTML='<div class="card"><div>Inserting SIM…</div><div id="cProg">0%</div></div>';
+  let p=0; const timer=setInterval(()=>{
+    p+=20; const el=document.getElementById('cProg'); if(el) el.textContent=p+'%';
+    if(p===40) steps.innerHTML+='<div class="card">Activating '+name+'…</div>';
+    if(p===80) steps.innerHTML+='<div class="card">Provisioning network (LTE)…</div>';
+    if(p>=100){ clearInterval(timer);
+      steps.innerHTML+='<div class="card"><strong>Done!</strong> '+name+' activated.</div>';
+      const seed=Math.floor(Math.random()*9000)+1000;
+      setCarrier({supported:true,carrier:name,sim:true,name:name,tech:'LTE',seed:seed});
+      openApp('carrier',true);
+    }
+  },500);
+}
+function carrierReset(){ setCarrier({supported:isMobileUA(), carrier:null, sim:false, name:'NO SIM', tech:null}); openApp('carrier',true); }
+
+// ===== Browser with history (/proxy) =====
+let bHist=[], bIndex=-1;
+function buildBrowser(){
+  const c=document.getElementById('browser-content');
+  c.innerHTML='<div class="toolbar">\
+    <button id="bb">◀︎</button>\
+    <button id="bf">▶︎</button>\
+    <input id="addr" placeholder="Type a URL like youtube.com" style="width:60%">\
+    <button id="bgo">Go</button>\
+    <button class="tbtn" id="bhome">Home</button>\
+  </div>\
+  <iframe id="view"></iframe>';
+  on('bb','click',browserBack); on('bf','click',browserFwd); on('bgo','click',go); on('bhome','click',browserHome);
+}
+function norm(u){u=u.trim(); if(!/^https?:\/\//i.test(u)){u='https://'+u} return u}
+function go(){ const u=norm(document.getElementById('addr').value); loadUrl(u, true); }
+function loadUrl(u, push){ document.getElementById('view').src='https://fb-aqzd.onrender.com/proxy?url='+encodeURIComponent(u); if(push){ bHist=bHist.slice(0,bIndex+1); bHist.push(u); bIndex=bHist.length-1; } }
+function browserBack(){ if(bIndex>0){ bIndex--; document.getElementById('addr').value=bHist[bIndex]; loadUrl(bHist[bIndex], false); } }
+function browserFwd(){ if(bIndex<bHist.length-1){ bIndex++; document.getElementById('addr').value=bHist[bIndex]; loadUrl(bHist[bIndex], false); } }
+function browserHome(){ const u='https://example.com'; document.getElementById('addr').value=u; loadUrl(u,true); }
+
+// ===== Camera / Photos =====
+function buildCamera(){
+  const c=document.getElementById('camera-content');
+  c.innerHTML='<div class="toolbar"><button class="tbtn" id="camStart">Start Camera</button> <button class="tbtn" id="camSnap">Capture</button></div>\
+  <div class="pad"><video id="camvid" autoplay playsinline style="width:100%;max-height:360px;border-radius:10px;background:#000"></video>\
+  <canvas id="camcan" width="1280" height="720" style="display:none"></canvas>\
+  <div id="camMsg" class="muted" style="margin-top:8px">Grant camera permission to use this app.</div></div>';
+  on('camStart','click',startCam); on('camSnap','click',snap);
+}
+async function startCam(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    const v=document.getElementById('camvid'); v.srcObject=stream; document.getElementById('camMsg').textContent='Camera is live.';
+  }catch(e){ document.getElementById('camMsg').textContent='Camera error or permission denied.'; }
+}
+function snap(){
+  const v=document.getElementById('camvid'); if(!v || !v.srcObject){ document.getElementById('camMsg').textContent='Start the camera first.'; return; }
+  const can=document.getElementById('camcan'); const ctx=can.getContext('2d');
+  ctx.drawImage(v,0,0,can.width,can.height); const url=can.toDataURL('image/png');
+  savePhoto(url); window.dispatchEvent(new CustomEvent('webos-photo-added',{detail:url}));
+  document.getElementById('camMsg').textContent='Saved to Photos.';
+}
+function buildPhotos(){
+  const c=document.getElementById('photos-content');
+  c.innerHTML='<div class="toolbar"><button class="tbtn" id="gRefresh">Refresh</button></div>\
+  <div class="pad"><input type="file" accept="image/*" multiple id="gPick"><div id="gallery" class="row mb16" style="flex-wrap:wrap"></div></div>';
+  on('gRefresh','click',refreshGallery); on('gPick','change',addPhotos);
+  refreshGallery();
+  window.addEventListener('webos-photo-added', (e)=>{ addToGallery(e.detail); });
+}
+function addPhotos(e){
+  const files = e.target.files ? Array.from(e.target.files) : [];
+  files.forEach(f=>{ const rd=new FileReader(); rd.onload=ev=>{ savePhoto(ev.target.result); addToGallery(ev.target.result); }; rd.readAsDataURL(f); });
+}
+function getPhotos(){ try{ return JSON.parse(localStorage.getItem('webos.photos')||'[]'); }catch{return [];} }
+function savePhoto(dataUrl){ const arr=getPhotos(); arr.push({url:dataUrl, ts:Date.now()}); localStorage.setItem('webos.photos', JSON.stringify(arr)); }
+function refreshGallery(){ const cont=document.getElementById('gallery'); if(!cont) return; cont.innerHTML=''; getPhotos().forEach(p=>addToGallery(p.url)); }
+function addToGallery(url){ const cont=document.getElementById('gallery'); if(!cont) return; const img=new Image(); img.src=url; img.style.maxWidth='200px'; img.style.borderRadius='10px'; img.style.margin='6px'; cont.appendChild(img); }
+
+// ===== Phone / Messages =====
+function buildPhone(){
+  const c=document.getElementById('phone-content');
+  c.innerHTML='<div class="toolbar"><strong>Dialer</strong></div>\
+  <div class="pad">\
+    <div class="row mb8"><input id="dialNum" placeholder="Enter number e.g. 5550101234" style="flex:1"></div>\
+    <div class="row mb16"><button class="tbtn" id="dialCall">Call</button><button class="tbtn" id="dialStar">*</button><button class="tbtn" id="dialHash">#</button></div>\
+    <div id="callLog"></div>\
+  </div>';
+  on('dialCall','click',doCall); on('dialStar','click',()=>addDigit('*')); on('dialHash','click',()=>addDigit('#'));
+  phoneRefresh();
+}
+function addDigit(d){ const i=document.getElementById('dialNum'); i.value+=d; }
+function doCall(){ const n=document.getElementById('dialNum').value.replace(/[^0-9+*#]/g,''); if(!n){alert('Enter a number');return;}
+  phoneLog('Called '+n); window.location.href='tel:'+encodeURIComponent(n); }
+function phoneLog(s){ const arr=jget('webos.calls',[]); arr.unshift({s,ts:Date.now()}); jset('webos.calls',arr); phoneRefresh(); }
+function phoneRefresh(){ const arr=jget('webos.calls',[]); const el=document.getElementById('callLog'); if(!el) return; el.innerHTML=arr.map(x=>'<div class="card">'+new Date(x.ts).toLocaleString()+' — '+x.s+'</div>').join(''); }
+
+function buildMessages(){
+  const c=document.getElementById('messages-content');
+  c.innerHTML='<div class="toolbar"><strong>Messages</strong></div>\
+  <div class="pad">\
+    <div class="row mb8"><input id="smsNum" placeholder="Phone number"><input id="smsBody" placeholder="Message" style="flex:1"></div>\
+    <div class="row mb16"><button class="tbtn" id="smsSend">Send</button></div>\
+    <div id="smsLog"></div>\
+  </div>';
+  on('smsSend','click',sendSms); smsRefresh();
+}
+function sendSms(){
+  const n=document.getElementById('smsNum').value.replace(/[^0-9+]/g,''); const m=document.getElementById('smsBody').value;
+  if(!n||!m){alert('Enter number and message'); return;}
+  const link='sms:'+encodeURIComponent(n)+(m?('?body='+encodeURIComponent(m)):''); smsLog('Texted '+n+': '+m); window.location.href=link;
+}
+function smsLog(s){ const arr=jget('webos.sms',[]); arr.unshift({s,ts:Date.now()}); jset('webos.sms',arr); smsRefresh(); }
+function smsRefresh(){ const arr=jget('webos.sms',[]); const el=document.getElementById('smsLog'); if(!el) return; el.innerHTML=arr.map(x=>'<div class="card">'+new Date(x.ts).toLocaleString()+' — '+x.s+'</div>').join(''); }
+
+// ===== Paint/Files/Calc kept minimal for stability =====
+function buildCalc(){
+  const c=document.getElementById('calculator-content');
+  c.innerHTML='<div class="pad">\
+    <input id="calc" readonly style="width:100%;height:40px;margin-bottom:10px;font-size:20px">\
+    <div class="row"><button class="tbtn" onclick="ci(\'7\')">7</button><button class="tbtn" onclick="ci(\'8\')">8</button><button class="tbtn" onclick="ci(\'9\')">9</button><button class="tbtn" onclick="ci(\'/\')">÷</button></div>\
+    <div class="row"><button class="tbtn" onclick="ci(\'4\')">4</button><button class="tbtn" onclick="ci(\'5\')">5</button><button class="tbtn" onclick="ci(\'6\')">6</button><button class="tbtn" onclick="ci(\'*\')">×</button></div>\
+    <div class="row"><button class="tbtn" onclick="ci(\'1\')">1</button><button class="tbtn" onclick="ci(\'2\')">2</button><button class="tbtn" onclick="ci(\'3\')">3</button><button class="tbtn" onclick="ci(\'-\')">−</button></div>\
+    <div class="row"><button class="tbtn" onclick="ci(\'0\')">0</button><button class="tbtn" onclick="ci(\'.\')">.</button><button class="tbtn" onclick="eq()">=</button><button class="tbtn" onclick="clr()">C</button></div>\
+  </div>';
+}
+function ci(x){document.getElementById('calc').value+=x}
+function eq(){try{document.getElementById('calc').value=Function('return '+document.getElementById('calc').value)()}catch{document.getElementById('calc').value='Error'}}
+function clr(){document.getElementById('calc').value=''}
+
+function buildStore(){ const c=document.getElementById('appstore-content'); c.innerHTML='<div class="pad"><h3>App Store</h3><div class="muted">Games coming back in v7 (kept minimal for hotfix stability).</div></div>'; }
+function buildPaint(){ const c=document.getElementById('paint-content'); c.innerHTML='<div class="pad"><div class="muted">Paint re-added in v7 (hotfix trims extras).</div></div>'; }
+function buildFiles(){ const c=document.getElementById('files-content'); c.innerHTML='<div class="pad"><div class="muted">Files returns in v7. (Your saved data is still in localStorage.)</div></div>'; }
+
+// ===== Build all windows now =====
+apps.forEach(a=>{
+  const w=buildWindow(a.id,a.name, a.id==='settings');
+  a.build();
+});
+
+// Welcome closers (no inline strings to avoid timing issues)
+['welcomeClose1','welcomeClose2','welcomeClose3'].forEach(id=>on(id,'click',()=>hide('welcome')));
+
+// init topbar & clock
+refreshCarrierUI();
+document.getElementById('clock').textContent=new Date().toLocaleString();
+</script>
+</body>
+</html>
